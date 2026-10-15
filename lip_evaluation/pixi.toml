@@ -1,7 +1,7 @@
 [workspace]
 channels = ["conda-forge"]
 name = "lip_eval"
-platforms = ["linux-64", "linux-aarch64"]
+platforms = ["linux-64"]
 version = "1.0.0"
 
 [dependencies]
@@ -21,6 +21,3 @@ com-loss-sweep = "python -m lip_eval.com_loss_sweep --steps 50000 --epochs 50 --
 
 # Appendix A.2: delay-embedding horizon sweep (table)
 history-sweep = "python -m lip_eval.history_sweep --steps 50000 --epochs 50 --samples 10 --omega-init 4.0"
-
-# All of Appendix A, one task after the other
-appendix = { depends-on = ["train", "com-loss-sweep", "history-sweep"] }
