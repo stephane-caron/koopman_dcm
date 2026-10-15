@@ -93,6 +93,7 @@ def plot_losses(
 
 
 def main() -> None:
+    """Run the training of Appendix A and print a summary."""
     print("=== Data generation ===")
     Y, U = generate_data(NUM_STEPS, seed=SEED)
 

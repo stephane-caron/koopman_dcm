@@ -16,7 +16,7 @@ Usage:
 
 import numpy as np
 
-from lip_eval.__main__ import DT, generate_data
+from lip_eval.generate_data import DT, generate_data
 from lip_eval.train_dcm import train_dcm
 
 HISTORY_SIZES: tuple[int, ...] = (1, 3, 5, 10, 20)  # delay-embedding horizons H
@@ -32,7 +32,13 @@ def print_summary(
     val_curves: dict,
     omega_curves: dict,
 ) -> None:
-    """Print per-history-size mean ± std of final train/val loss and ω."""
+    """Print per-history-size mean ± std of final train/val loss and ω.
+
+    Args:
+        train_curves: Per-epoch training losses of each run, by history size.
+        val_curves: Per-epoch validation losses of each run, by history size.
+        omega_curves: Per-epoch learned ω of each run, by history size.
+    """
     print("\n=== History sweep summary (mean ± std over samples) ===")
     print(f"  {'h':>3s}  {'train_loss':>22s}  {'val_loss':>22s}  {'ω (rad/s)':>20s}")
     for h in HISTORY_SIZES:
@@ -48,6 +54,7 @@ def print_summary(
 
 
 def main() -> None:
+    """Run the history-size sweep of Appendix A.2."""
     train_curves: dict = {h: [] for h in HISTORY_SIZES}
     val_curves: dict = {h: [] for h in HISTORY_SIZES}
     omega_curves: dict = {h: [] for h in HISTORY_SIZES}
