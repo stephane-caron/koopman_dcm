@@ -1,30 +1,37 @@
 # SPDX-License-Identifier: Apache-2.0
 
-"""Evaluate the encoder training pipeline on a 1-D linear inverted pendulum.
+"""Evaluate the DCM training pipeline on a 1-D linear inverted pendulum.
 
-Generates synthetic data from c̈ = ω²(c − z), trains encoder ξ(y, u history)
-jointly with ω, then plots training curves.
+Generates synthetic data from c̈ = ω²(c − z), trains the DCM observable
+ξ_θ(y, u history) jointly with ω, then plots training curves.
 
 Usage:
-    pixi run python -m lip_eval --steps 200000 --epochs 100
+    pixi run train
 """
-
-import argparse
-import copy
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-from torch import nn
-from torch.utils.data import DataLoader, TensorDataset
 
 from lip_eval.figures import save_pyplot_figure
+from lip_eval.train_dcm import train
 
 # ---------------------------------------------------------------------------
-# Constants
+# Training run (Appendix A)
+# ---------------------------------------------------------------------------
+
+NUM_STEPS: int = 200_000  # closed-loop simulation steps in the dataset
+EPOCHS: int = 100
+HIST_SIZE: int = 10  # delay-embedding horizon H
+OMEGA_INIT: float = 4.0  # rad/s, initial guess for ω
+COM_LOSS_WEIGHT: float = 1.0  # w_CoM
+SEED: int = 0  # for both data generation and training
+PLOT_NAME: str = "lip_eval_losses"
+
+# ---------------------------------------------------------------------------
+# LIP model
 # ---------------------------------------------------------------------------
 
 OMEGA_TRUE: float = 5.0  # LIP natural frequency sqrt(g/h), h = 0.4 m
@@ -120,7 +127,7 @@ def generate_data(
     Parameters are re-drawn from _PERIODS / _AMPLITUDES / _OFFSETS every
     _CHUNK_STEPS steps.  Varied frequencies are required for ω to be
     identifiable: with a single frequency there are approximate local minima
-    for any (encoder ≈ c + ċ/ω′, ω̂ = ω′).
+    for any (learned DCM ≈ c + ċ/ω′, ω̂ = ω′).
 
     Returns:
         Y: Observation array of shape (num_steps, OBS_DIM).
@@ -161,7 +168,7 @@ def generate_data(
 
 
 # ---------------------------------------------------------------------------
-# History assembler
+# Training curves
 # ---------------------------------------------------------------------------
 
 
@@ -384,7 +391,7 @@ def plot_losses(
     train_losses: list[float],
     val_losses: list[float],
     omegas: list[float],
-    plot_name: str = "lip_eval_losses",
+    plot_name: str,
     val_dcm_losses: list[float] | None = None,
     val_com_losses: list[float] | None = None,
 ) -> None:
@@ -423,7 +430,7 @@ def plot_losses(
     ax.set_yscale("log")
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Loss (MSE)")
-    ax.set_title("LIP encoder training curves")
+    ax.set_title("DCM training curves on the LIP")
     ax.grid(True, which="both", alpha=0.3)
     ax2 = ax.twinx()
     (l3,) = ax2.plot(epochs_x, omegas, lw=1.5, color="tab:green", label="ω (rad/s)")
@@ -442,40 +449,8 @@ def plot_losses(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="LIP evaluation of the encoder + ω training pipeline"
-    )
-    parser.add_argument(
-        "--steps",
-        type=int,
-        default=200_000,
-        help="Simulation steps for data generation (default: 200 000)",
-    )
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--hist-size", type=int, default=10)
-    parser.add_argument(
-        "--omega-init",
-        type=float,
-        default=4.0,
-        help="Initial ω guess for training (true = 5.0 rad/s)",
-    )
-    parser.add_argument("--batch-size", type=int, default=1024)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument(
-        "--plot-name",
-        type=str,
-        default="lip_eval_losses",
-    )
-    parser.add_argument(
-        "--com-loss-weight",
-        type=float,
-        default=1.0,
-        help="Weight for the complementary CoM constraint loss (default: 1.0)",
-    )
-    args = parser.parse_args()
-
     print("=== Data generation ===")
-    Y, U = generate_data(args.steps)
+    Y, U = generate_data(NUM_STEPS, seed=SEED)
 
     print("\n=== Training ===")
     (
@@ -489,18 +464,18 @@ def main() -> None:
     ) = train(
         Y,
         U,
-        hist_size=args.hist_size,
-        omega_init=args.omega_init,
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        lr=args.lr,
-        com_loss_weight=args.com_loss_weight,
+        dt=DT,
+        hist_size=HIST_SIZE,
+        omega_init=OMEGA_INIT,
+        epochs=EPOCHS,
+        com_loss_weight=COM_LOSS_WEIGHT,
+        seed=SEED,
     )
     plot_losses(
         train_losses,
         val_losses,
         omegas,
-        plot_name=args.plot_name,
+        plot_name=PLOT_NAME,
         val_dcm_losses=val_dcm_losses,
         val_com_losses=val_com_losses,
     )

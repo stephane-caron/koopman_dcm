@@ -20,9 +20,4 @@ Each part of the appendix corresponds to a pixi task:
 | `pixi run com-loss-sweep` | Appendix A.1, *Weight of the CoM Prediction Loss*: table and Figure "CoM-weight sweep" | `figures/*_lip_eval_com_sweep.pdf`, summary table |
 | `pixi run history-sweep` | Appendix A.2, *Delay-embedding Horizon*: Table "Delay-embedding horizon $H$ on the LIP model" | Summary table |
 
-Figures are saved to `figures/` as `<date>_<time>_<name>.pdf`. Tables are printed at the end of each run. Each task calls one script with the hyperparameters of the appendix, set as command-line arguments in `pixi.toml`. Run the script directly to change them, for example:
-
-```console
-pixi run python -m lip_eval --help
-pixi run python -m lip_eval.com_loss_sweep --epochs 100
-```
+Figures are saved to `figures/` as `<date>_<time>_<name>.pdf`. Tables are printed at the end of each run. Hyperparameters are set to the values of the appendix by global constants at the top of each script, and of `lip_eval/train_dcm.py` for those shared by all runs.
