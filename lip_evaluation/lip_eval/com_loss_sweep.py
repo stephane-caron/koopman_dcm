@@ -18,7 +18,7 @@ import numpy as np
 
 from lip_eval.__main__ import DT, OMEGA_TRUE, generate_data
 from lip_eval.figures import save_pyplot_figure
-from lip_eval.train_dcm import train
+from lip_eval.train_dcm import train_dcm
 
 COM_LOSS_WEIGHTS: tuple[float, ...] = (0.1, 1.0, 10.0, 100.0)  # w_CoM
 NUM_SAMPLES: int = 3  # seeds per weight
@@ -93,7 +93,7 @@ def main() -> None:
         Y, U = generate_data(NUM_STEPS, seed=s)
         for w in COM_LOSS_WEIGHTS:
             print(f"  α={w:g}")
-            _, _, _, val_l, omegas_l, _, _ = train(
+            _, _, _, val_l, omegas_l, _, _ = train_dcm(
                 Y,
                 U,
                 dt=DT,

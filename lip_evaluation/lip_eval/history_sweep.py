@@ -6,7 +6,7 @@ For each history size in HISTORY_SIZES, runs NUM_SAMPLES training runs
 (different seeds) and prints the mean ± std of the final train/val losses
 and ω over samples.
 
-Training delegates to ``lip_eval.train_dcm.train`` so the pipeline
+Training delegates to ``lip_eval.train_dcm.train_dcm`` so the pipeline
 matches the main LIP evaluation script exactly --- DCM dynamics loss +
 CoM prediction loss, ω jointly learned as exp(log_ω).
 
@@ -17,7 +17,7 @@ Usage:
 import numpy as np
 
 from lip_eval.__main__ import DT, generate_data
-from lip_eval.train_dcm import train
+from lip_eval.train_dcm import train_dcm
 
 HISTORY_SIZES: tuple[int, ...] = (1, 3, 5, 10, 20)  # delay-embedding horizons H
 NUM_SAMPLES: int = 10  # seeds per history size
@@ -58,7 +58,7 @@ def main() -> None:
             seed = 1000 * h + s
             print(f"  sample {s + 1}/{NUM_SAMPLES}  (seed={seed})")
             Y, U = generate_data(NUM_STEPS, seed=seed)
-            _, _, tr, va, om, _, _ = train(
+            _, _, tr, va, om, _, _ = train_dcm(
                 Y,
                 U,
                 dt=DT,
