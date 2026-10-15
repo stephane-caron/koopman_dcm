@@ -1,27 +1,30 @@
 # SPDX-License-Identifier: Apache-2.0
 
-"""Sweep the encoder history size and print final losses and ω.
+"""Sweep the history size of the DCM observable, print final losses and ω.
 
-For each history size in {1, 3, 5, 10, 20}, runs N training samples
+For each history size in HISTORY_SIZES, runs NUM_SAMPLES training runs
 (different seeds) and prints the mean ± std of the final train/val losses
 and ω over samples.
 
-Training delegates to ``lip_eval.__main__.train`` so the pipeline
+Training delegates to ``lip_eval.train_dcm.train`` so the pipeline
 matches the main LIP evaluation script exactly --- DCM dynamics loss +
 CoM prediction loss, ω jointly learned as exp(log_ω).
 
 Usage:
-    pixi run python -m lip_eval.history_sweep \\
-        --steps 50000 --epochs 50 --samples 10
+    pixi run history-sweep
 """
-
-import argparse
 
 import numpy as np
 
-from lip_eval.__main__ import generate_data, train
+from lip_eval.__main__ import DT, generate_data
+from lip_eval.train_dcm import train
 
-HISTORY_SIZES: tuple[int, ...] = (1, 3, 5, 10, 20)
+HISTORY_SIZES: tuple[int, ...] = (1, 3, 5, 10, 20)  # delay-embedding horizons H
+NUM_SAMPLES: int = 10  # seeds per history size
+NUM_STEPS: int = 50_000  # closed-loop simulation steps per dataset
+EPOCHS: int = 50
+OMEGA_INIT: float = 4.0  # rad/s, initial guess for ω
+COM_LOSS_WEIGHT: float = 1.0  # w_CoM
 
 
 def print_summary(
@@ -45,35 +48,24 @@ def print_summary(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="History-size sweep on the LIP encoder pipeline"
-    )
-    parser.add_argument("--steps", type=int, default=50_000)
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--samples", type=int, default=10)
-    parser.add_argument("--omega-init", type=float, default=4.0)
-    parser.add_argument("--batch-size", type=int, default=1024)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    args = parser.parse_args()
-
     train_curves: dict = {h: [] for h in HISTORY_SIZES}
     val_curves: dict = {h: [] for h in HISTORY_SIZES}
     omega_curves: dict = {h: [] for h in HISTORY_SIZES}
 
     for h in HISTORY_SIZES:
         print(f"\n=== History size {h} ===")
-        for s in range(args.samples):
+        for s in range(NUM_SAMPLES):
             seed = 1000 * h + s
-            print(f"  sample {s + 1}/{args.samples}  (seed={seed})")
-            Y, U = generate_data(args.steps, seed=seed)
+            print(f"  sample {s + 1}/{NUM_SAMPLES}  (seed={seed})")
+            Y, U = generate_data(NUM_STEPS, seed=seed)
             _, _, tr, va, om, _, _ = train(
                 Y,
                 U,
+                dt=DT,
                 hist_size=h,
-                omega_init=args.omega_init,
-                epochs=args.epochs,
-                batch_size=args.batch_size,
-                lr=args.lr,
+                omega_init=OMEGA_INIT,
+                epochs=EPOCHS,
+                com_loss_weight=COM_LOSS_WEIGHT,
                 seed=seed,
             )
             train_curves[h].append(tr)

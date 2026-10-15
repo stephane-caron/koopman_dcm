@@ -14,10 +14,10 @@ torch = ">=2.0"
 
 [tasks]
 # Appendix A: training run of Figure "Training of a Koopman DCM estimator on a LIP model"
-train = "python -m lip_eval --steps 200000 --epochs 100 --hist-size 10 --omega-init 4.0 --com-loss-weight 1.0"
+train = "python -m lip_eval"
 
 # Appendix A.1: CoM-loss weight sweep (table and figure)
-com-loss-sweep = "python -m lip_eval.com_loss_sweep --steps 50000 --epochs 50 --samples 3 --hist-size 10 --omega-init 1.0"
+com-loss-sweep = "python -m lip_eval.com_loss_sweep"
 
 # Appendix A.2: delay-embedding horizon sweep (table)
-history-sweep = "python -m lip_eval.history_sweep --steps 50000 --epochs 50 --samples 10 --omega-init 4.0"
+history-sweep = "python -m lip_eval.history_sweep"

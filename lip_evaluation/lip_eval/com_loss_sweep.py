@@ -2,12 +2,13 @@
 
 """Sweep CoM loss weights, plot validation loss and convergence of ω.
 
-For each weight in COM_LOSS_WEIGHTS, runs --samples training runs sharing
+For each weight in COM_LOSS_WEIGHTS, runs NUM_SAMPLES training runs sharing
 the same data seed (so the only variable is the weight), records per-epoch
 validation loss and ω, and overlays mean ± individual curves on two subplots.
-"""
 
-import argparse
+Usage:
+    pixi run com-loss-sweep
+"""
 
 import matplotlib
 
@@ -15,10 +16,17 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lip_eval.__main__ import OMEGA_TRUE, generate_data, train
+from lip_eval.__main__ import DT, OMEGA_TRUE, generate_data
 from lip_eval.figures import save_pyplot_figure
+from lip_eval.train_dcm import train
 
-COM_LOSS_WEIGHTS: tuple[float, ...] = (0.1, 1.0, 10.0, 100.0)
+COM_LOSS_WEIGHTS: tuple[float, ...] = (0.1, 1.0, 10.0, 100.0)  # w_CoM
+NUM_SAMPLES: int = 3  # seeds per weight
+NUM_STEPS: int = 50_000  # closed-loop simulation steps per dataset
+EPOCHS: int = 50
+HIST_SIZE: int = 10  # delay-embedding horizon H
+OMEGA_INIT: float = 1.0  # rad/s, initial guess for ω, close to ω = 0
+PLOT_NAME: str = "lip_eval_com_sweep"
 
 
 def _lighten(color: tuple[float, float, float, float], alpha: float):
@@ -76,55 +84,31 @@ def plot_sweep(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="CoM loss weight sweep on the LIP encoder pipeline"
-    )
-    parser.add_argument("--steps", type=int, default=50_000)
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--samples", type=int, default=3)
-    parser.add_argument("--hist-size", type=int, default=10)
-    parser.add_argument(
-        "--omega-init",
-        type=float,
-        default=1.0,
-        help="Initial ω guess (default: 1.0 rad/s, true = 5.0 rad/s)",
-    )
-    parser.add_argument("--batch-size", type=int, default=1024)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument(
-        "--plot-name",
-        type=str,
-        default="lip_eval_com_sweep",
-    )
-    args = parser.parse_args()
-
     val_curves: dict = {w: [] for w in COM_LOSS_WEIGHTS}
     omega_curves: dict = {w: [] for w in COM_LOSS_WEIGHTS}
 
     # Each run s uses the same data for all weights
-    for s in range(args.samples):
-        print(f"\n=== Run {s + 1}/{args.samples} (seed={s}) ===")
-        Y, U = generate_data(args.steps, seed=s)
+    for s in range(NUM_SAMPLES):
+        print(f"\n=== Run {s + 1}/{NUM_SAMPLES} (seed={s}) ===")
+        Y, U = generate_data(NUM_STEPS, seed=s)
         for w in COM_LOSS_WEIGHTS:
             print(f"  α={w:g}")
             _, _, _, val_l, omegas_l, _, _ = train(
                 Y,
                 U,
-                hist_size=args.hist_size,
-                omega_init=args.omega_init,
+                dt=DT,
+                hist_size=HIST_SIZE,
+                omega_init=OMEGA_INIT,
+                epochs=EPOCHS,
                 com_loss_weight=w,
-                epochs=args.epochs,
-                batch_size=args.batch_size,
-                lr=args.lr,
-                val_frac=0.1,
                 seed=s,
             )
             val_curves[w].append(val_l)
             omega_curves[w].append(omegas_l)
             print(f"    final val={val_l[-1]:.3e}  ω={omegas_l[-1]:.4f} rad/s")
 
-    plot_sweep(val_curves, omega_curves, plot_name=args.plot_name)
-    plot_summary(val_curves, omega_curves, plot_name=f"{args.plot_name}_summary")
+    plot_sweep(val_curves, omega_curves, plot_name=PLOT_NAME)
+    plot_summary(val_curves, omega_curves, plot_name=f"{PLOT_NAME}_summary")
     print_summary(val_curves, omega_curves)
 
 
