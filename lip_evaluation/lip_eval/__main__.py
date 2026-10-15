@@ -16,11 +16,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from lip_eval.figures import save_pyplot_figure
+from lip_eval.generate_data import DT, OMEGA_TRUE, generate_data
 from lip_eval.train_dcm import train_dcm
-
-# ---------------------------------------------------------------------------
-# Training run (Appendix A)
-# ---------------------------------------------------------------------------
 
 NUM_STEPS: int = 200_000  # closed-loop simulation steps in the dataset
 EPOCHS: int = 100
@@ -29,147 +26,6 @@ OMEGA_INIT: float = 4.0  # rad/s, initial guess for ω
 COM_LOSS_WEIGHT: float = 1.0  # w_CoM
 SEED: int = 0  # for both data generation and training
 PLOT_NAME: str = "lip_eval_losses"
-
-# ---------------------------------------------------------------------------
-# LIP model
-# ---------------------------------------------------------------------------
-
-OMEGA_TRUE: float = 5.0  # LIP natural frequency sqrt(g/h), h = 0.4 m
-DT: float = 1.0 / 200.0  # s
-OBS_DIM: int = 6  # y = [cx, cy, cz, ċx, ċy, ċz]
-COM_HEIGHT: float = 0.4  # m, constant CoM height
-
-
-# ---------------------------------------------------------------------------
-# LIP dynamics
-# ---------------------------------------------------------------------------
-
-
-def lip_step(
-    c: float, cdot: float, z: float, omega: float, dt: float
-) -> tuple[float, float]:
-    """Exact ZOH integration of LIP dynamics for piecewise-constant z."""
-    odt = omega * dt
-    d = c - z
-    c_next = np.cosh(odt) * d + np.sinh(odt) / omega * cdot + z
-    cdot_next = omega * np.sinh(odt) * d + np.cosh(odt) * cdot
-    return float(c_next), float(cdot_next)
-
-
-def dcm_from_state(c: float, cdot: float, omega: float) -> float:
-    return c + cdot / omega
-
-
-def make_obs(c: float, cdot: float) -> np.ndarray:
-    """6-D observation [cx, cy, cz, ċx, ċy, ċz]; cy/cz/ċy/ċz are constant."""
-    return np.array([c, 0.0, COM_HEIGHT, cdot, 0.0, 0.0], dtype=np.float32)
-
-
-# ---------------------------------------------------------------------------
-# Sinusoidal ZMP/DCM reference
-# ---------------------------------------------------------------------------
-
-
-def compute_targets(
-    t: float, amplitude: float, offset: float, period: float, omega: float
-) -> tuple[float, float]:
-    """Return (zmp_ref, dcm_ref) for a sine-wave ZMP reference at time t."""
-    nu = 2.0 * np.pi / period
-    phase = nu * t
-    zmp = amplitude * np.sin(phase) + offset
-    shift = np.arctan2(nu, omega)
-    dcm = amplitude * omega / np.sqrt(omega**2 + nu**2) * np.sin(phase + shift) + offset
-    return zmp, dcm
-
-
-# ---------------------------------------------------------------------------
-# DCM controller
-# ---------------------------------------------------------------------------
-
-
-def compute_zmp(
-    xi: float,
-    xi_ref: float,
-    z_ref: float,
-    kp: float = 1.0,
-    omega: float = OMEGA_TRUE,
-) -> float:
-    """z = z_ref − (1 + kp/ω)(ξ_ref − ξ), clipped to [−1, 1]."""
-    zmp_gain = 1.0 + kp / omega
-    return float(np.clip(z_ref - zmp_gain * (xi_ref - xi), -1.0, 1.0))
-
-
-# ---------------------------------------------------------------------------
-# Data generation
-# ---------------------------------------------------------------------------
-
-
-_PERIODS = [
-    0.3,
-    0.5,
-    0.8,
-    1.2,
-    2.0,
-]  # sinusoidal ZMP periods used in curriculum
-_AMPLITUDES = [0.1, 0.2, 0.3, 0.4, 0.5]
-_OFFSETS = [-0.2, -0.1, 0.0, 0.1, 0.2]
-_CHUNK_STEPS = 2_000  # re-draw parameters every N steps
-
-
-def generate_data(
-    num_steps: int,
-    kp: float = 1.0,
-    fall_threshold: float = 1.0,
-    seed: int = 0,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Simulate the 1-D LIP under a varied sinusoidal curriculum.
-
-    Parameters are re-drawn from _PERIODS / _AMPLITUDES / _OFFSETS every
-    _CHUNK_STEPS steps.  Varied frequencies are required for ω to be
-    identifiable: with a single frequency there are approximate local minima
-    for any (learned DCM ≈ c + ċ/ω′, ω̂ = ω′).
-
-    Returns:
-        Y: Observation array of shape (num_steps, OBS_DIM).
-        U: ZMP command array of shape (num_steps,).
-    """
-    rng = np.random.default_rng(seed)
-    c, cdot, t = 0.0, 0.0, 0.0
-    Y = np.empty((num_steps, OBS_DIM), dtype=np.float32)
-    U = np.empty(num_steps, dtype=np.float32)
-    n_resets = 0
-    period = float(rng.choice(_PERIODS))
-    amplitude = float(rng.choice(_AMPLITUDES))
-    offset = float(rng.choice(_OFFSETS))
-
-    for k in range(num_steps):
-        if k % _CHUNK_STEPS == 0 and k > 0:
-            period = float(rng.choice(_PERIODS))
-            amplitude = float(rng.choice(_AMPLITUDES))
-            offset = float(rng.choice(_OFFSETS))
-            t = 0.0
-
-        z_ref, xi_ref = compute_targets(t, amplitude, offset, period, OMEGA_TRUE)
-        xi = dcm_from_state(c, cdot, OMEGA_TRUE)
-        z = compute_zmp(xi, xi_ref, z_ref, kp)
-
-        Y[k] = make_obs(c, cdot)
-        U[k] = np.float32(z)
-
-        c, cdot = lip_step(c, cdot, z, OMEGA_TRUE, DT)
-        t += DT
-
-        if abs(c) > fall_threshold:
-            c, cdot, t = 0.0, 0.0, 0.0
-            n_resets += 1
-
-    print(f"  {num_steps:,} steps — {n_resets} resets")
-    return Y, U
-
-
-# ---------------------------------------------------------------------------
-# Training curves
-# ---------------------------------------------------------------------------
 
 
 def plot_losses(
@@ -185,6 +41,14 @@ def plot_losses(
     If ``val_dcm_losses`` and ``val_com_losses`` are provided, overlays
     the unweighted DCM and CoM validation components so the reader can
     see which term dominates and when each crosses below the other.
+
+    Args:
+        train_losses: Training loss at each epoch.
+        val_losses: Validation loss at each epoch.
+        omegas: Learned ω at each epoch, in rad/s.
+        plot_name: Name of the saved figure.
+        val_dcm_losses: Unweighted DCM validation loss at each epoch.
+        val_com_losses: Unweighted CoM validation loss at each epoch.
     """
     epochs_x = np.arange(1, len(train_losses) + 1)
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -226,11 +90,6 @@ def plot_losses(
     plt.tight_layout()
     save_pyplot_figure(plot_name)
     plt.close(fig)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def main() -> None:
