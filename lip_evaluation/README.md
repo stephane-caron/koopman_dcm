@@ -14,12 +14,32 @@ pixi install
 
 Each part of the appendix corresponds to a pixi task. Figures are saved to `figures/` while tables are printed to the standard output.
 
-- **Figure 3:** Training of a Koopman DCM estimator on a LIP model
-  - Command: `pixi run train`
-  - This task output `figures/*_lip_eval_losses.pdf`, printing out the learned $\hat{\omega}$ and final validation losses.
-- **Appendix A.1:** Weight of the CoM Prediction Loss
-  - Command: `pixi run com-loss-sweep`
-  - This task outputs `figures/*_lip_eval_com_sweep.pdf` as well as a summary table.
-- **Appendix A.2:** Delay-embedding Horizon
-  - Command: `pixi run history-sweep`
-  - This task outputs the Table "Delay-embedding horizon $H$ on the LIP model".
+### Figure 3
+
+To train of a Koopman DCM estimator on a LIP model:
+
+```console
+pixi run train
+```
+
+This task output `figures/*_lip_eval_losses.pdf`, printing out the learned $\hat{\omega}$ and final validation losses.
+
+### Appendix A.1
+
+To evaluate the effect of the weight $w_{\text{CoM}}$ of the CoM prediction loss:
+
+```console
+pixi run com-loss-sweep
+```
+
+This task outputs `figures/*_lip_eval_com_sweep.pdf` as well as a summary table.
+
+### Appendix A.2
+
+To evaluate the effect of the delay-embedding horizon $H$:
+
+```console
+pixi run history-sweep
+```
+
+This task outputs the Table "Delay-embedding horizon $H$ on the LIP model".
