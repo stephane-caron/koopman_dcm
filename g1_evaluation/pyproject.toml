@@ -1,0 +1,43 @@
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "g1_evaluation"
+version = "0.0.1"
+description = "MPC evaluation over a learned DCM on the Unitree G1 humanoid in PyBullet."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64"]
+
+[tool.pixi.dependencies]
+python = ">=3.10,<3.13"
+h5py = ">=3.0"
+numpy = ">=1.24"
+onnx = ">=1.16"
+onnxruntime = ">=1.18"
+proxsuite = ">=0.7"
+pybullet = ">=3.25,<4"
+qpsolvers = ">=4.10.0,<5"
+scipy = ">=1.10"
+tqdm = ">=4.67"
+
+[tool.pixi.pypi-dependencies]
+g1_evaluation = { path = ".", editable = true }
+pinker = ">=1.1.0,<2"
+qpmpc = ">=3.2.0"
+robot_descriptions = ">=1.13.0"
+onnxscript = "*"
+torch = ">=2.0"
+
+[tool.pixi.tasks]
+collect-data = { cmd = "python -m g1_evaluation.collect_data_pybullet", description = "Collect the training dataset of the DCM observable" }
+download-data = { cmd = "python -m g1_evaluation.download_data", description = "Download the training dataset of the paper from Hugging Face" }
+download-model = { cmd = "python -m g1_evaluation.download_model", description = "Download the DCM observable of the paper from Hugging Face" }
+evaluate = { cmd = "python -m g1_evaluation.evaluate", depends-on = ["download-model"], description = "Table 2 (G1 humanoid): evaluate the three controllers" }
+print-table = { cmd = "python -m g1_evaluation.print_table", description = "Table 2 (G1 humanoid): print the table from saved results" }
+train-dcm = { cmd = "python -m g1_evaluation.train_dcm", depends-on = ["download-data"], description = "Train the DCM observable" }
