@@ -10,7 +10,7 @@ import scipy.stats
 
 from . import settings
 
-# Per-trial results written by ``pixi run evaluate``
+# Per-trial results written by ``pixi run evaluate-mpc``
 INPUT: Path = settings.DATA_DIR / "g1-evaluation.h5"
 
 # Row labels of the paper's table, in order
@@ -29,7 +29,7 @@ def print_table(input_path: Path) -> None:
     over all trials of a controller, fallen or not.
 
     Args:
-        input_path: HDF5 file written by ``pixi run evaluate``.
+        input_path: HDF5 file written by ``pixi run evaluate-mpc``.
     """
     with h5py.File(input_path, "r") as hf:
         ctrl = hf["controller"][:].astype(str)

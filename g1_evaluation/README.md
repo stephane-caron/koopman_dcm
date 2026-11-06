@@ -17,7 +17,7 @@ pixi install
 To evaluate the three controllers with the DCM observable trained for the paper:
 
 ```console
-pixi run evaluate
+pixi run evaluate-mpc
 ```
 
 This task first downloads the trained DCM model of the paper from Hugging Face to `models/`. It then sweeps ZMP references $u^\text{ref}_t = o + A \sin(2\pi t / T)$ over amplitudes $A \in \{0.3, 0.6, 0.9\}$, offsets $o \in \{0, 0.5\}$ and periods $T \in \{1.3, 1.6, 1.9\}$ s, with five seeds per cell (90 trials of 19 s per controller), and finally prints the G1 side of Table 2. Per-trial results are saved to `data/g1-evaluation.h5`. To print the table again from this file:
@@ -34,7 +34,7 @@ The DCM observable is trained from closed-loop trajectories of the G1 balancing 
 pixi run train-dcm
 ```
 
-This task first downloads the dataset from Hugging Face to `data/pybullet-g1.h5`. It then prints the learned $\hat{\omega}$ and validation losses at each epoch, and exports the model with the lowest validation loss to `models/dcm-pybullet-g1-new.onnx`. Training runs on a CUDA GPU if one is available, and on CPU otherwise. To evaluate the new model, set `MODEL_PATH` in `g1_evaluation/evaluate.py` to its path, then run `pixi run evaluate`.
+This task first downloads the dataset from Hugging Face to `data/pybullet-g1.h5`. It then prints the learned $\hat{\omega}$ and validation losses at each epoch, and exports the model with the lowest validation loss to `models/dcm-pybullet-g1-new.onnx`. Training runs on a CUDA GPU if one is available, and on CPU otherwise. To evaluate the new model, set `MODEL_PATH` in `g1_evaluation/evaluate_mpc.py` to its path, then run `pixi run evaluate-mpc`.
 
 To collect a new dataset of one million control steps (about 70 minutes of simulated time at 240 Hz) with four parallel workers:
 

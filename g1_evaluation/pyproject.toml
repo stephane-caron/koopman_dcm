@@ -38,6 +38,6 @@ torch = ">=2.0"
 collect-data = { cmd = "python -m g1_evaluation.collect_data_pybullet", description = "Collect the training dataset of the DCM observable" }
 download-data = { cmd = "python -m g1_evaluation.download_data", description = "Download the training dataset of the paper from Hugging Face" }
 download-model = { cmd = "python -m g1_evaluation.download_model", description = "Download the DCM observable of the paper from Hugging Face" }
-evaluate = { cmd = "python -m g1_evaluation.evaluate", depends-on = ["download-model"], description = "Table 2 (G1 humanoid): evaluate the three controllers" }
+evaluate-mpc = { cmd = "python -m g1_evaluation.evaluate_mpc", depends-on = ["download-model"], description = "Table 2 (G1 humanoid): evaluate the three controllers" }
 print-table = { cmd = "python -m g1_evaluation.print_table", description = "Table 2 (G1 humanoid): print the table from saved results" }
 train-dcm = { cmd = "python -m g1_evaluation.train_dcm", depends-on = ["download-data"], description = "Train the DCM observable" }
