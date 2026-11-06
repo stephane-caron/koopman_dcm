@@ -4,6 +4,8 @@
 
 Source code, models and data for [Koopman DCM: Unstable Eigenfunctions as Data-driven Representations for Legged Balancing](https://arxiv.org/abs/2607.18760).
 
+![Cookie robot balancing using LIP DCM then Koopman DCM observables](https://cdn.fosstodon.org/media_attachments/files/117/571/554/101/171/906/original/5e2f1cb64e98fe0d.jpg)
+
 ## Upcoming
 
 This work will be presented next month at [CoRL 2026](https://www.corl.org/). In the meantime, source code and data will be released according to the following plan:
