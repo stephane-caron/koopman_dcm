@@ -1,10 +1,10 @@
 # Koopman DCM
 
+<img align=right width="300px" src="https://cdn.fosstodon.org/media_attachments/files/117/571/554/101/171/906/original/5e2f1cb64e98fe0d.jpg">
+
 [[`Paper`](https://openreview.net/pdf?id=mday00WZFr)] [[`Dataset`](https://huggingface.co/datasets/stephane-caron/koopman_dcm)] [[`Models`](https://huggingface.co/stephane-caron/koopman_dcm)] [[`Video`](https://scaron.info/videos/corl-2026.mp4)]
 
 Source code, models and data for [Koopman DCM: Unstable Eigenfunctions as Data-driven Representations for Legged Balancing](https://arxiv.org/abs/2607.18760).
-
-![Cookie robot balancing using LIP DCM then Koopman DCM observables](https://cdn.fosstodon.org/media_attachments/files/117/571/554/101/171/906/original/5e2f1cb64e98fe0d.jpg)
 
 ## Upcoming
 
