@@ -24,7 +24,7 @@ from .onnx_dcm_observable import load_dcm_observable
 from .print_table import print_table
 from .robots import get_spec
 
-logger = logging.getLogger("g1_evaluation.evaluate")
+logger = logging.getLogger("g1_evaluation.evaluate_mpc")
 
 LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
 
