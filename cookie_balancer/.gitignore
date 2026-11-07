@@ -1,0 +1,23 @@
+# Datasets and robot logs, downloaded or recorded
+*.h5
+*.mpack
+*.mpack.bz2
+data/
+
+# Trained DCM observables, downloaded or trained
+models/
+
+# Reports of the real-robot benchmarks
+baseline-comparison-*.md
+ood-periods-*.md
+
+# Outputs of evaluations, figures and sweeps
+evaluation/
+figures/
+sweep_runs/
+
+# Python and tools
+__pycache__/
+*.egg-info/
+.pixi/
+.ruff_cache/

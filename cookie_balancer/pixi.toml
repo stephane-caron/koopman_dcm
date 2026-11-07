@@ -1,0 +1,56 @@
+[workspace]
+channels = ["conda-forge"]
+name = "cookie_balancer"
+platforms = ["linux-64", "linux-aarch64"]
+version = "0.1.0"
+
+[dependencies]
+h5py = ">=3.0"
+proxsuite = ">=0.7.2,<0.8"
+qpmpc = ">=3.2.0,<4"
+qpsolvers = ">=4.10.0,<5"
+quadprog = ">=0.1.11"
+upkie = ">=13.1.0,<14"
+
+[pypi-dependencies]
+cookie-description = ">=1.2.0,<2"
+cookie_balancer = { path = ".", editable = true }
+onnxruntime = ">=1.18"
+pinker = ">=1.1.0,<2"
+
+[tasks]
+download-data = { cmd = "python -m cookie_balancer.download_data", description = "Download the datasets of the paper from Hugging Face" }
+download-models = { cmd = "python -m cookie_balancer.download_models", description = "Download the DCM observables of the paper from Hugging Face" }
+
+# Default environment, for simulation and training
+
+[environments.default]
+features = ["dev", "default"]
+
+[feature.dev.dependencies]
+matplotlib = ">=3.0"
+pybullet = ">=3.25,<4"
+tqdm = ">=4.67.0,<5"
+
+[feature.dev.pypi-dependencies]
+onnx = ">=1.16"
+onnxscript = "*"
+torch = ">=2.0"
+viser = ">=1.0.26, <2"
+
+[feature.dev.tasks]
+evaluate-mpc = { cmd = "python -m cookie_balancer.evaluate_mpc", depends-on = ["download-models"], description = "Table 2 (Cookie wheeled biped): evaluate the three controllers in PyBullet" }
+pybullet-balance = { cmd = "python -m cookie_balancer.run_pybullet", depends-on = ["download-models"], description = "Run the balancer in the PyBullet GUI, with a viser interface in the browser" }
+pybullet-collect-data = { cmd = "python -m cookie_balancer.collect_data_pybullet", description = "Collect a PyBullet dataset to train a simulation DCM" }
+train-dcm = { cmd = "python -m cookie_balancer.train_dcm", depends-on = ["download-data"], description = "Train the DCM observable" }
+
+# Real environment, without development dependencies, for the robot
+
+[environments.real]
+features = ["real", "default"]
+
+[feature.real.tasks]
+real-balance = { cmd = "python -m cookie_balancer.run_balancer", depends-on = ["download-models"], description = "Run the balancer on the real robot, with the joystick interface" }
+real-benchmark-dcm = { cmd = "python -m cookie_balancer.benchmark_dcm_spine", depends-on = ["download-models"], description = "Table 1: compare the DCMs on the real robot" }
+real-benchmark-ood-periods = { cmd = "python -m cookie_balancer.benchmark_ood_periods", depends-on = ["download-models"], description = "Compare the DCMs at out-of-distribution periods on the real robot" }
+real-collect-data = { cmd = "python -m cookie_balancer.collect_data_spine", description = "Collect a training dataset on the real robot" }

@@ -1,0 +1,45 @@
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "cookie_balancer"
+readme = "README.md"
+authors = [
+    {name = "Stéphane Caron", email = "stephane.caron@cnrs.fr"},
+]
+maintainers = [
+    {name = "Stéphane Caron", email = "stephane.caron@cnrs.fr"},
+]
+dynamic = ["version", "description"]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Robot Framework :: Library",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "upkie >=13.1.0,<14"
+]
+keywords = []
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = ["E", "F", "I001", "W"]
+ignore = [
+    "D401",  # good for methods but not for class docstrings
+    "D405",  # British-style section names are also "proper"!
+]
+pydocstyle = { convention = "google" }
+
+[tool.ruff.lint.isort]
+known-third-party = ["upkie"]
